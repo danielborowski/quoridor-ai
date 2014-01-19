@@ -119,9 +119,9 @@ function movePiece(curLoc,newLoc) {
     if (whatPiece=='piecePlayer' && cw==-1) { computerMove(); }
 }
 
-/**********************************
+/*********************************
         CHECK FOR WINNERS
-**********************************/
+*********************************/
 function checkWin() {
     var computer = $('.pieceComputer').parent().attr("data-pos");
     var player = $('.piecePlayer').parent().attr("data-pos"); 
