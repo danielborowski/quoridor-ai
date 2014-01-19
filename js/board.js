@@ -39,8 +39,7 @@ function possibleMoves(loc,compTesting,opponentLoc,possibleWalls) {
     for (var c=0;c<moves.length;c++) {  
         if (loc<moves[c]) { var check = loc+"-"+moves[c]; }    
         else { var check = moves[c]+"-"+loc; }   
-        if ((walS.indexOf(check) != -1) && (removeSpaces.indexOf(moves[c]) == -1)) {      
-            // FIX THIS SHIT DAMN IT                   
+        if ((walS.indexOf(check) != -1) && (removeSpaces.indexOf(moves[c]) == -1)) { 
             removeSpaces.push(moves[c]); 
         }
     }   
