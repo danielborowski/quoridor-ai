@@ -1,5 +1,5 @@
 
-var boardWidth = 9; // change overlapping arrays when bw=9
+var boardWidth = 9; 
 var lastSpace = (boardWidth-1)*(boardWidth+1);
 
 /****************************************************
