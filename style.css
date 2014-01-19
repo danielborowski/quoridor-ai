@@ -1,0 +1,45 @@
+* {margin: 0; padding: 0; }
+html {overflow-y: scroll;} 
+ul { list-style: none inside; }
+li { list-style: none inside; }
+a:focus { outline: none; }
+.clear { clear: both; }   /* <div class="clear"> </div> */
+a { text-decoration: none; color: black;}
+input, textarea { outline: none; }
+fieldset { border: none; }
+table { border-collapse: collapse; border-spacing: 0; }
+::-moz-selection{ background: pink; color: white; } 
+::selection { background: pink; color: white; }   
+
+/* BOARD SETUP */
+#board { margin-left: 20px; border: 9px solid #7da4b4; margin-top: 7px; margin-bottom: 7px;  
+-moz-box-shadow:    0px 0px 0px 3px #324f5a;
+-webkit-box-shadow: 0px 0px 0px 3px #324f5a;
+box-shadow:         0px 0px 0px 3px #324f5a; }
+#board td { width: 50px; height: 50px; border: 0px solid black; background: #fff; }
+#board td.wallPlacementVert,
+#board td.wallPlacementVert_NOHOVER { width: 11px; border: 0px; background: #7da4b4; }
+#board td.wallPlacementHoriz,
+#board td.wallPlacementHoriz_NOHOVER { height: 11px; border: 0px; background: #7da4b4; }     
+#board td.crossSpace { width: 11px; height: 11px; border: 0px; background: #7da4b4; }
+#board td.wallPlacementHoriz, #board td.wallPlacementVert { cursor: pointer; }
+#board td.movableGreenSpaces { background: #f3ff6a; }    
+textarea { visibility: hidden; }   
+
+/* PIECES */
+.pieceComputer { border-radius: 50%; width: 39px; height: 39px; background: #bc2525; margin-left: 5px; border: 1px solid #a31d1d; }
+.piecePlayer { border-radius: 50%; width: 39px; height: 39px; background: #3ebc25; margin-left: 5px; border: 1px solid #34a51d; }
+
+/* WALL PLACEMENT */
+#board td.possibleWall { background: #5f212d; }
+#board td.keepWall { background: #5f212d; }
+#showCompPieces, #showPlayerPieces { margin-top: 5px; }
+#showPlayerPieces span, #showCompPieces span { font-size: 17px; font-family: "Arial"; margin-left: 18px; }
+#showPlayerPieces span.wallVal, #showCompPieces span.wallVal { margin: 0; font-size: 24px; }
+
+/* RULES */
+#play { float: left; overflow: auto; padding-right: 15px; margin-left: 10px; }
+#rules { float: left; overflow: auto; width: 510px; height: 400px; 
+font-size: 15px; margin-top: 28px; margin-left: 20px; font-family: "Helvetica"; }    
+#rules p:first-child { font-size: 26px; text-align: center; margin-bottom: 12px; }
+#rules a { color: #297598; }

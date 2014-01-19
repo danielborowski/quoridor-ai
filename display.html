@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html>
+<head> 
+<title> Quoridor AI </title>  
+<meta name="author" content="Daniel Borowski" /> 
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />      
+<link type="text/css" rel="stylesheet" href="style.css" />   
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<script src='js/path/graph.js' type='text/javascript'></script>
+<script src='js/path/astar.js' type='text/javascript'></script> 
+<script src="js/board.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/ai.js" type="text/javascript" charset="utf-8"></script>  
+<script src="js/placewall.js" type="text/javascript" charset="utf-8"></script> 
+ 
+<script>
+$(document).ready(function() {
+    
+    // game variables
+    var boardWidth = 9;
+    var piece_moves;
+    var playerWalls = 10;
+    var computerWalls = 10;
+    
+    // player moving 
+    $('.piecePlayer').live('click',function() {  
+        piece_moves = possibleMoves($(this).parent().attr('data-pos'),false,$('.pieceComputer').parent().attr('data-pos'),null);    
+    });
+    $('.movableGreenSpaces').live('click',function() {      
+        movePiece(piece_moves[0],$(this).attr('data-pos'));    
+    }); 
+    $('.pieceComputer').live('click',function() { alert("Please don't touch the computer."); });   
+    
+    /*************************************************
+             GUI FOR PLAYER TO PLACE WALLS
+         WALL PLACEMENT AND ARRAY UPDATING BELOW
+    *************************************************/
+    
+    // display remaining walls
+    $('#showCompPieces').children().next().text(computerWalls);
+    $('#showPlayerPieces').children().next().text(playerWalls);     
+    
+    // show wall placement to player     
+    $('.wallPlacementHoriz').live({
+    mouseenter: function () {
+        if (playerWalls>0) { 
+            $(this).addClass("possibleWall");  
+            $(this).next().addClass("possibleWall");  
+            $(this).next().next().addClass("possibleWall"); 
+        }
+    }, mouseleave: function () {
+        $(this).removeClass("possibleWall");  
+        $(this).next().removeClass("possibleWall");  
+        $(this).next().next().removeClass("possibleWall");     
+    }});
+    $('.wallPlacementVert').live({ 
+    mouseenter: function () {
+        if (playerWalls>0) {
+            var nextVert = $(this).attr('data-pos');
+            var nvf = parseInt(nextVert.substr(0,nextVert.indexOf("-"))) + boardWidth;
+            var nvs = parseInt(nextVert.substr(nextVert.indexOf("-")+1)) + boardWidth;   
+            var cross = nvf-boardWidth+"-"+nvf; nextVert = nvf+"-"+nvs;            
+            $(this).addClass("possibleWall");   
+            $("td[data-pos='"+nextVert+"']").addClass("possibleWall"); 
+            $("td[data-pos='"+cross+"']").next().addClass("possibleWall");
+        }
+    }, mouseleave: function () { 
+        var nextVert = $(this).attr('data-pos');
+        var nvf = parseInt(nextVert.substr(0,nextVert.indexOf("-"))) + boardWidth;
+        var nvs = parseInt(nextVert.substr(nextVert.indexOf("-")+1)) + boardWidth;
+        var cross = nvf-boardWidth+"-"+nvf; nextVert = nvf+"-"+nvs;   
+        $(this).removeClass("possibleWall");   
+        $("td[data-pos='"+nextVert+"']").removeClass("possibleWall"); 
+        $("td[data-pos='"+cross+"']").next().removeClass("possibleWall");    
+    }});   
+    
+    // player actually placing wall
+    $('.possibleWall').live('click',function() { 
+        var thisWall = $(this).attr("data-pos");   
+        var whichDir = $(this).attr('class'); 
+        whichDir = whichDir.substr(0,whichDir.indexOf(" "));
+        console.log("-------------------------");
+        if (whichDir=="wallPlacementHoriz") {
+            var noWalls = ($("#nowalls").val()+",").split(',');
+            var walls = $("#walls").val();  
+            // get second part of wall for horiz
+            var nextPart = $(this).next().next().attr('data-pos');
+            // add new walls if pieces are not trapped   
+            $('#possibleWalls').val(thisWall+","+nextPart);
+            var pw = $('#possibleWalls').val();
+            var checkLegal = pathToEndExists(pw,null,null);
+            if (checkLegal) {
+                walls = walls+","+thisWall; 
+                walls = walls+","+nextPart;  
+                if (walls[0]==',') { walls = walls.substr(1); }
+                // delete cross-intersection and directly prior walls that overlap
+                var intersec = thisWall.substr(0,thisWall.indexOf('-'))+"-"+nextPart.substr(0,nextPart.indexOf('-'));
+                var prior = parseInt(thisWall.substr(0,thisWall.indexOf('-')))-1;
+                var prior_2 = parseInt(thisWall.substr(thisWall.indexOf('-')+1))-1;
+                var priorWall = prior+"-"+prior_2;
+                // take these wall possibilities away
+                noWalls.splice(noWalls.indexOf(thisWall),1); 
+                noWalls.splice(noWalls.indexOf(nextPart),1); 
+                if (noWalls.indexOf(intersec) != -1) { noWalls.splice(noWalls.indexOf(intersec),1); $("td[data-pos='"+intersec+"']").removeClass("wallPlacementVert").addClass('wallPlacementVert_NOHOVER'); }
+                if (noWalls.indexOf(priorWall) != -1) { noWalls.splice(noWalls.indexOf(priorWall),1); $("td[data-pos='"+priorWall+"']").removeClass("wallPlacementHoriz").addClass('wallPlacementHoriz_NOHOVER'); }
+                // update textareas and display
+                $("#nowalls").val(noWalls);
+                $("#walls").val(walls);
+                $("td[data-pos='"+thisWall+"']").removeClass('wallPlacementHoriz').addClass("wallPlacementHoriz_NOHOVER").addClass("keepWall");
+                $("td[data-pos='"+thisWall+"']").next().addClass("keepWall"); 
+                $("td[data-pos='"+nextPart+"']").removeClass('wallPlacementHoriz').addClass("wallPlacementHoriz_NOHOVER").addClass("keepWall"); 
+                playerWalls--;
+                computerMove();   
+            } else { alert('ILLEGAL WALL'); } 
+            $('#possibleWalls').val(''); 
+        } 
+        else if (whichDir=="wallPlacementVert") {
+            var noWalls = ($("#nowalls").val()+",").split(',');
+            var walls = $("#walls").val();
+            // get second part of wall for horiz
+            var nvf = parseInt(thisWall.substr(0,thisWall.indexOf("-"))) + boardWidth;
+            var nvs = parseInt(thisWall.substr(thisWall.indexOf("-")+1)) + boardWidth;
+            var nextPart = nvf+"-"+nvs;
+            // add new walls if pieces are not trapped   
+            $('#possibleWalls').val(thisWall+","+nextPart); 
+            var pw = $('#possibleWalls').val();   
+            var checkLegal = pathToEndExists(pw,null,null);
+            if (checkLegal) {
+                walls = walls+","+thisWall; 
+                walls = walls+","+nextPart;  
+                if (walls[0]==',') { walls = walls.substr(1); }
+                // delete cross-intersection and directly prior walls that overlap
+                var intersec = thisWall.substr(0,thisWall.indexOf('-'))+"-"+nextPart.substr(0,nextPart.indexOf('-'));
+                var prior = parseInt(thisWall.substr(0,thisWall.indexOf('-')))-boardWidth;
+                var prior_2 = parseInt(thisWall.substr(thisWall.indexOf('-')+1))-boardWidth;
+                var priorWall = prior+"-"+prior_2;
+                // take these wall possibilities away
+                noWalls.splice(noWalls.indexOf(thisWall),1); 
+                noWalls.splice(noWalls.indexOf(nextPart),1);   
+                if (noWalls.indexOf(intersec) != -1) { noWalls.splice(noWalls.indexOf(intersec),1); $("td[data-pos='"+intersec+"']").removeClass("wallPlacementHoriz").addClass('wallPlacementHoriz_NOHOVER'); }
+                if (noWalls.indexOf(priorWall) != -1) { noWalls.splice(noWalls.indexOf(priorWall),1); $("td[data-pos='"+priorWall+"']").removeClass("wallPlacementVert").addClass('wallPlacementVert_NOHOVER'); }
+                // update textareas and display
+                $("#nowalls").val(noWalls);
+                $("#walls").val(walls);
+                var cross = nvf-boardWidth+"-"+nvf;
+                $("td[data-pos='"+thisWall+"']").removeClass('wallPlacementVert').addClass("wallPlacementVert_NOHOVER").addClass("keepWall");
+                $("td[data-pos='"+cross+"']").next().addClass("keepWall"); 
+                $("td[data-pos='"+nextPart+"']").removeClass('wallPlacementVert').addClass("wallPlacementVert_NOHOVER").addClass("keepWall"); 
+                playerWalls--; 
+                computerMove();  
+            } else { alert('ILLEGAL WALL'); }
+            $('#possibleWalls').val('');            
+        }
+        $("#board td").removeClass('movableGreenSpaces');
+        $('#showPlayerPieces').children().next().text(playerWalls);
+    });
+    
+});
+</script>
+
+</head>
+<body>
+
+<div id='play'>
+<div id='showCompPieces'><span>Walls: </span><span class='wallVal'></span></div>
+<table id='board'>
+    <!-- ROW 1 -->
+    <tr>
+        <td data-pos='0'></td>
+            <td data-pos='0-1' class='wallPlacementVert'></td>  
+        <td data-pos='1'></td> 
+            <td data-pos='1-2' class='wallPlacementVert'></td>
+        <td data-pos='2'> </td> 
+            <td data-pos='2-3' class='wallPlacementVert'></td>
+        <td data-pos='3'></td> 
+            <td data-pos='3-4' class='wallPlacementVert'></td>
+        <td data-pos='4'> <div class='pieceComputer'></div> </td>
+            <td data-pos='4-5' class='wallPlacementVert'></td> 
+        <td data-pos='5'></td>
+            <td data-pos='5-6' class='wallPlacementVert'></td>  
+        <td data-pos='6'></td> 
+            <td data-pos='6-7' class='wallPlacementVert'></td>
+        <td data-pos='7'></td> 
+            <td data-pos='7-8' class='wallPlacementVert'></td>
+        <td data-pos='8'></td> 
+    </tr>
+    <tr>
+        <td data-pos='0-9' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='1-10' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='2-11' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='3-12' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='4-13' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='5-14' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='6-15' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='7-16' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='8-17' class='wallPlacementHoriz_NOHOVER'></td> 
+    </tr>
+    <!-- ROW 2 -->
+    <tr>
+        <td data-pos='9'></td>
+            <td data-pos='9-10' class='wallPlacementVert'></td>  
+        <td data-pos='10'></td> 
+            <td data-pos='10-11' class='wallPlacementVert'></td>
+        <td data-pos='11'></td> 
+            <td data-pos='11-12' class='wallPlacementVert'></td>
+        <td data-pos='12'></td> 
+            <td data-pos='12-13' class='wallPlacementVert'></td>
+        <td data-pos='13'></td>
+            <td data-pos='13-14' class='wallPlacementVert'></td> 
+        <td data-pos='14'></td>
+            <td data-pos='14-15' class='wallPlacementVert'></td>  
+        <td data-pos='15'></td> 
+            <td data-pos='15-16' class='wallPlacementVert'></td>
+        <td data-pos='16'></td> 
+            <td data-pos='16-17' class='wallPlacementVert'></td>
+        <td data-pos='17'></td> 
+    </tr>
+    <tr>
+        <td data-pos='9-18' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='10-19' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='11-20' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='12-21' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='13-22' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='14-23' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='15-24' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='16-25' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='17-26' class='wallPlacementHoriz_NOHOVER'></td> 
+    </tr>
+    <!-- ROW 3 -->
+    <tr>
+        <td data-pos='18'></td>
+            <td data-pos='18-19' class='wallPlacementVert'></td>  
+        <td data-pos='19'></td> 
+            <td data-pos='19-20' class='wallPlacementVert'></td>
+        <td data-pos='20'></td> 
+            <td data-pos='20-21' class='wallPlacementVert'></td>
+        <td data-pos='21'></td> 
+            <td data-pos='21-22' class='wallPlacementVert'></td>
+        <td data-pos='22'></td>
+            <td data-pos='22-23' class='wallPlacementVert'></td> 
+        <td data-pos='23'></td>
+            <td data-pos='23-24' class='wallPlacementVert'></td>  
+        <td data-pos='24'></td> 
+            <td data-pos='24-25' class='wallPlacementVert'></td>
+        <td data-pos='25'></td> 
+            <td data-pos='25-26' class='wallPlacementVert'></td>
+        <td data-pos='26'></td> 
+    </tr>
+    <tr>
+        <td data-pos='18-27' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='19-28' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='20-29' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='21-30' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='22-31' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='23-32' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='24-33' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='25-34' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='26-35' class='wallPlacementHoriz_NOHOVER'></td> 
+    </tr>
+    <!-- ROW 4 -->
+    <tr>
+        <td data-pos='27'></td>
+            <td data-pos='27-28' class='wallPlacementVert'></td>  
+        <td data-pos='28'></td> 
+            <td data-pos='28-29' class='wallPlacementVert'></td>
+        <td data-pos='29'></td> 
+            <td data-pos='29-30' class='wallPlacementVert'></td>
+        <td data-pos='30'></td> 
+            <td data-pos='30-31' class='wallPlacementVert'></td>
+        <td data-pos='31'></td>
+            <td data-pos='31-32' class='wallPlacementVert'></td> 
+        <td data-pos='32'></td>
+            <td data-pos='32-33' class='wallPlacementVert'></td>  
+        <td data-pos='33'></td> 
+            <td data-pos='33-34' class='wallPlacementVert'></td>
+        <td data-pos='34'></td> 
+            <td data-pos='34-35' class='wallPlacementVert'></td>
+        <td data-pos='35'></td> 
+    </tr>
+    <tr>
+        <td data-pos='27-36' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='28-37' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='29-38' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='30-39' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='31-40' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='32-41' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='33-42' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='34-43' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='35-44' class='wallPlacementHoriz_NOHOVER'></td> 
+    </tr>
+    <!-- ROW 5 -->
+    <tr>
+        <td data-pos='36'></td>
+            <td data-pos='36-37' class='wallPlacementVert'></td>  
+        <td data-pos='37'></td> 
+            <td data-pos='37-38' class='wallPlacementVert'></td>
+        <td data-pos='38'></td> 
+            <td data-pos='38-39' class='wallPlacementVert'></td>
+        <td data-pos='39'></td> 
+            <td data-pos='39-40' class='wallPlacementVert'></td>
+        <td data-pos='40'></td>
+            <td data-pos='40-41' class='wallPlacementVert'></td> 
+        <td data-pos='41'></td>
+            <td data-pos='41-42' class='wallPlacementVert'></td>  
+        <td data-pos='42'></td> 
+            <td data-pos='42-43' class='wallPlacementVert'></td>
+        <td data-pos='43'></td> 
+            <td data-pos='43-44' class='wallPlacementVert'></td>
+        <td data-pos='44'></td> 
+    </tr>
+    <tr>
+        <td data-pos='36-45' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='37-46' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='38-47' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='39-48' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='40-49' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='41-50' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='42-51' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='43-52' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='44-53' class='wallPlacementHoriz_NOHOVER'></td> 
+    </tr>
+    <!-- ROW 6 -->
+    <tr>
+        <td data-pos='45'></td>
+            <td data-pos='45-46' class='wallPlacementVert'></td>  
+        <td data-pos='46'></td> 
+            <td data-pos='46-47' class='wallPlacementVert'></td>
+        <td data-pos='47'></td> 
+            <td data-pos='47-48' class='wallPlacementVert'></td>
+        <td data-pos='48'></td> 
+            <td data-pos='48-49' class='wallPlacementVert'></td>
+        <td data-pos='49'></td>
+            <td data-pos='49-50' class='wallPlacementVert'></td> 
+        <td data-pos='50'></td>
+            <td data-pos='50-51' class='wallPlacementVert'></td>  
+        <td data-pos='51'></td> 
+            <td data-pos='51-52' class='wallPlacementVert'></td>
+        <td data-pos='52'></td> 
+            <td data-pos='52-53' class='wallPlacementVert'></td>
+        <td data-pos='53'></td> 
+    </tr>
+    <tr>
+        <td data-pos='45-54' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='46-55' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='47-56' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='48-57' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='49-58' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='50-59' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='51-60' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='52-61' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='53-62' class='wallPlacementHoriz_NOHOVER'></td> 
+    </tr>
+    <!-- ROW 7 -->
+    <tr>
+        <td data-pos='54'></td>
+            <td data-pos='54-55' class='wallPlacementVert'></td>  
+        <td data-pos='55'></td> 
+            <td data-pos='55-56' class='wallPlacementVert'></td>
+        <td data-pos='56'></td> 
+            <td data-pos='56-57' class='wallPlacementVert'></td>
+        <td data-pos='57'></td> 
+            <td data-pos='57-58' class='wallPlacementVert'></td>
+        <td data-pos='58'></td>
+            <td data-pos='58-59' class='wallPlacementVert'></td> 
+        <td data-pos='59'></td>
+            <td data-pos='59-60' class='wallPlacementVert'></td>  
+        <td data-pos='60'></td> 
+            <td data-pos='60-61' class='wallPlacementVert'></td>
+        <td data-pos='61'></td> 
+            <td data-pos='61-62' class='wallPlacementVert'></td>
+        <td data-pos='62'></td> 
+    </tr>
+    <tr>
+        <td data-pos='54-63' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='55-64' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='56-65' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='57-66' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='58-67' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='59-68' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='60-69' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='61-70' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='62-71' class='wallPlacementHoriz_NOHOVER'></td> 
+    </tr>
+    <!-- ROW 8 -->
+    <tr>
+        <td data-pos='63'></td>
+            <td data-pos='63-64' class='wallPlacementVert'></td>  
+        <td data-pos='64'></td> 
+            <td data-pos='64-65' class='wallPlacementVert'></td>
+        <td data-pos='65'></td> 
+            <td data-pos='65-66' class='wallPlacementVert'></td>
+        <td data-pos='66'></td> 
+            <td data-pos='66-67' class='wallPlacementVert'></td>
+        <td data-pos='67'></td>
+            <td data-pos='67-68' class='wallPlacementVert'></td> 
+        <td data-pos='68'></td>
+            <td data-pos='68-69' class='wallPlacementVert'></td>  
+        <td data-pos='69'></td> 
+            <td data-pos='69-70' class='wallPlacementVert'></td>
+        <td data-pos='70'></td> 
+            <td data-pos='70-71' class='wallPlacementVert'></td>
+        <td data-pos='71'></td> 
+    </tr>
+    <tr>
+        <td data-pos='63-72' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='64-73' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='65-74' class='wallPlacementHoriz'></td>  
+        <td class='crossSpace'></td>  
+        <td data-pos='66-75' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='67-76' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='68-77' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='69-78' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='70-79' class='wallPlacementHoriz'></td> 
+        <td class='crossSpace'></td>  
+        <td data-pos='71-80' class='wallPlacementHoriz_NOHOVER'></td> 
+    </tr>
+    <!-- ROW 9 -->
+    <tr>
+        <td data-pos='72'></td>
+            <td data-pos='72-73' class='wallPlacementVert_NOHOVER'></td>  
+        <td data-pos='73'></td> 
+            <td data-pos='73-74' class='wallPlacementVert_NOHOVER'></td>
+        <td data-pos='74'></td> 
+            <td data-pos='74-75' class='wallPlacementVert_NOHOVER'></td>
+        <td data-pos='75'></td> 
+            <td data-pos='75-76' class='wallPlacementVert_NOHOVER'></td>
+        <td data-pos='76'> <div class='piecePlayer'></div> </td>
+            <td data-pos='76-77' class='wallPlacementVert_NOHOVER'></td> 
+        <td data-pos='77'></td>
+            <td data-pos='77-78' class='wallPlacementVert_NOHOVER'></td>  
+        <td data-pos='78'></td> 
+            <td data-pos='78-79' class='wallPlacementVert_NOHOVER'></td>
+        <td data-pos='79'></td> 
+            <td data-pos='79-80' class='wallPlacementVert_NOHOVER'></td>
+        <td data-pos='80'></td> 
+    </tr>
+</table>
+<div id='showPlayerPieces'><span>Walls: </span><span class='wallVal'></span></div>  
+</div>
+
+<div id='rules'>
+<p>Quoridor AI</p>
+Quoridor is a game played on a 9x9 board where your objective is to get your piece to the opposite side of the board from where it begins. You play as green and on
+each turn you can either press on your piece and move it or you can place one of your available walls on the board.
+<br><br>
+<a href='http://en.wikipedia.org/wiki/Quoridor'>Click here</a> to view the full rules.
+<br>
+The AI is written in JavaScript and you can check out the <a href=''>source on GitHub</a>.
+</div>
+
+<textarea id='nowalls'>
+0-1,1-2,2-3,3-4,4-5,5-6,6-7,7-8,0-9,1-10,2-11,3-12,4-13,5-14,6-15,7-16,9-10,10-11,11-12,12-13,13-14,14-15,15-16,16-17,9-18,10-19,11-20,12-21,13-22,14-23,15-24,16-25,18-19,19-20,20-21,21-22,22-23,23-24,24-25,25-26,18-27,19-28,20-29,21-30,22-31,23-32,24-33,25-34,27-28,28-29,29-30,30-31,31-32,32-33,33-34,34-35,27-36,28-37,29-38,30-39,31-40,32-41,33-42,34-43,36-37,37-38,38-39,39-40,40-41,41-42,42-43,43-44,36-45,37-46,38-47,39-48,40-49,41-50,42-51,43-52,45-46,46-47,47-48,48-49,49-50,50-51,51-52,52-53,45-54,46-55,47-56,48-57,49-58,50-59,51-60,52-61,54-55,55-56,56-57,57-58,58-59,59-60,60-61,61-62,54-63,55-64,56-65,57-66,58-67,59-68,60-69,61-70,63-64,64-65,65-66,66-67,67-68,68-69,69-70,70-71,63-72,64-73,65-74,66-75,67-76,68-77,69-78,70-79</textarea>
+<br>
+<textarea id='walls'></textarea>
+<br>
+<textarea id='possibleWalls'></textarea>   
+
+</body>
+</html>
