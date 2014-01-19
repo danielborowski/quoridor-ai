@@ -143,7 +143,7 @@ function computerMove() {
                     if (checkLegal!='illegal' && typeof checkLegal!='undefined' && typeof checkLegal[0]!='undefined' && checkLegal[0]!='' && checkLegal[0]!=' ') {  
                         for (var a=finalLocToCheck+35;a>finalLocToCheck-35;a--) {   
                             if (test_wall_1!=wallSimulations[a] && test_wall_2!=wallSimulations[a] && wallPreventTrap==null &&
-                                checkLegal[0].indexOf(wallSimulations[a])!=-1 && typeof wallSimulations[a]!='undefined') {
+                                checkLegal[0].toString().indexOf(wallSimulations[a])!=-1 && typeof wallSimulations[a]!='undefined') {
                                 var whatWallPlace_2 = $('#board td[data-pos='+wallSimulations[a]+']').attr('class');    
                                 if (whatWallPlace_2=="wallPlacementHoriz") {
                                     var test_wall_1_1 = wallSimulations[a];
@@ -164,7 +164,7 @@ function computerMove() {
                                         for (var z=finalLocToCheck-35;z<finalLocToCheck+35;z++) { 
                                             if (wallPreventTrap==null && test_wall_1!=wallSimulations[z] && test_wall_2!=wallSimulations[z] && 
                                                 test_wall_1_1!=wallSimulations[z] && test_wall_2_2!=wallSimulations[z] && typeof wallSimulations[z]!='undefined' &&
-                                                checkLegal_2[0].indexOf(wallSimulations[z])!=-1) {
+                                                checkLegal_2[0].toString().indexOf(wallSimulations[z])!=-1) {
                                                 var whatWallPlace_5 = $('#board td[data-pos='+wallSimulations[z]+']').attr('class');    
                                                 if (whatWallPlace_5=="wallPlacementHoriz") {
                                                     var test_wall_1_z = wallSimulations[z];
@@ -206,7 +206,7 @@ function computerMove() {
                                                         if (wallPreventTrap==null && test_wall_1!=wallSimulations[c] && test_wall_2!=wallSimulations[c] && 
                                                             test_wall_1_1!=wallSimulations[c] && test_wall_2_2!=wallSimulations[c] && test_wall_1_b!=wallSimulations[c] &&
                                                             test_wall_2_b!=wallSimulations[c] && typeof wallSimulations[c]!='undefined' 
-                                                            && checkLegal_3[0].indexOf(wallSimulations[c])!=-1) {
+                                                            && checkLegal_3[0].toString().indexOf(wallSimulations[c])!=-1) {
                                                             var whatWallPlace_4 = $('#board td[data-pos='+wallSimulations[c]+']').attr('class');    
                                                             if (whatWallPlace_4=="wallPlacementHoriz") {
                                                                 var test_wall_1_c = wallSimulations[c];
@@ -453,7 +453,7 @@ function computerMove() {
             }
             
         } 
-        else {
+        else {  
             movePiece(compMoves[0],bestMove);
         }       
     }            

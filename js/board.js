@@ -53,16 +53,35 @@ function possibleMoves(loc,compTesting,opponentLoc,possibleWalls) {
         if (loc<possibleJumps[j]) { var jump = ((possibleJumps[j]-loc)*2); }    
         else { var jump = ((loc-possibleJumps[j])*2)*-1; } 
         if (moves.indexOf(loc+jump) == -1) { moves.push(loc+jump); }        
-    }    
+    }  
     // prevent jumping over opponent with wall behind them   
+    var jcheck = false
     for (var a=0;a<moves.length;a++) {
         if (moves.indexOf(oppLoc) != -1) {
             if (oppLoc<moves[a]) { var check = oppLoc+"-"+moves[a]; }    
             else { var check = moves[a]+"-"+oppLoc; }      
-            if (walls.indexOf(check) != -1) { removeSpaces.push(moves[a]); }   
+            if (walls.indexOf(check) != -1) { 
+                removeSpaces.push(moves[a]); 
+                jcheck = true;
+            }   
         }         
-    }     
-    // TODO HERE: ADD PIECE JUMPING TO SIDE IF WALL BLOCKING 
+    }   
+    // add actual spaces where player will jump to the side of opponent
+    if (jcheck) {
+        for (var j=0;j<4;j++) {
+            if (j==0 && oppLoc-1!=loc && moves.indexOf(oppLoc-1)==-1) { moves.push(oppLoc-1); }    
+            else if (j==1 && oppLoc+1!=loc && moves.indexOf(oppLoc+1)==-1) { moves.push(oppLoc+1); }  
+            else if (j==2 && oppLoc+9!=loc && moves.indexOf(oppLoc+9)==-1) { moves.push(oppLoc+9); }  
+            else if (j==3 && oppLoc-9!=loc && moves.indexOf(oppLoc-9)==-1) { moves.push(oppLoc-9); }      
+        }
+    }
+    for (var a=0;a<moves.length;a++) {
+        if (moves.indexOf(oppLoc) != -1) {
+            if (oppLoc<moves[a]) { var check = oppLoc+"-"+moves[a]; }    
+            else { var check = moves[a]+"-"+oppLoc; }      
+            if (walls.indexOf(check) != -1 && removeSpaces.indexOf(moves[a]) == -1) { removeSpaces.push(moves[a]); }   
+        }         
+    } 
     // check if the placement of a possible (not placed yet) wall is legal by checking path to end
     if (possibleWalls==null) { var possibleWalls = $("#possibleWalls").val(); } 
     else { var possibleWalls = possibleWalls; }
