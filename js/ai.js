@@ -181,10 +181,7 @@ function computerMove() {
                                                     wallPreventTrap = wallSimulations[z]; 
                                                     var actuallyLegal = pathToEndExists(wallPreventTrap+","+test_wall_2_z,null,null);
                                                     if (!actuallyLegal) { wallPreventTrap = null; }
-                                                    else { 
-                                                        console.log("SINGLE TRAP LATER"); 
-                                                        wallPreventTrap = "tempfake";  
-                                                    }      
+                                                    else { wallPreventTrap = "tempfake"; }      
                                                 } 
                                             }
                                         }
@@ -227,8 +224,7 @@ function computerMove() {
                                                                 var actuallyLegal = pathToEndExists(test_wall_1_b+","+test_wall_2_b+","+test_wall_1_c+","+test_wall_2_c,null,null);  
                                                                 if (!actuallyLegal) { wallPreventTrap = null; }   
                                                                 console.log(test_wall_1+","+test_wall_2+","+test_wall_1_1+","+test_wall_2_2+","+test_wall_1_b+","+test_wall_2_b+","+test_wall_1_c+","+test_wall_2_c);  
-                                                                countD++;
-                                                                //if (countD>5000) { console.log("DONE SEARCHING FOR DT"); wallPreventTrap='tempfake'; } 
+                                                                //countD++; if (countD>5000) { wallPreventTrap='tempfake'; } 
                                                                 console.log("DOUBLE TRAP");
                                                             } 
                                                         }
