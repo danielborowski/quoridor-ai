@@ -140,7 +140,7 @@ function computerMove() {
                         var test_wall_2 = nvf+"-"+nvs;      
                         var checkLegal = placeVertWall_COMPUTE(test_wall_1,noWalls_td,walls_td,10,10,playerLoc,oppLoc,'c');     
                     }           
-                    if (checkLegal!='illegal' && typeof checkLegal!='undefined' && typeof checkLegal[0]!='undefined') {  
+                    if (checkLegal!='illegal' && typeof checkLegal!='undefined' && typeof checkLegal[0]!='undefined' && checkLegal[0]!='' && checkLegal[0]!=' ') {  
                         for (var a=finalLocToCheck+35;a>finalLocToCheck-35;a--) {   
                             if (test_wall_1!=wallSimulations[a] && test_wall_2!=wallSimulations[a] && wallPreventTrap==null &&
                                 checkLegal[0].indexOf(wallSimulations[a])!=-1 && typeof wallSimulations[a]!='undefined') {
@@ -332,49 +332,51 @@ function computerMove() {
         var walls_d = $("#walls").val();       
         var noWalls_d = $("#nowalls").val().split(',');
         // determine DOUBLE wall that slows player if computer is behind at least 2 spaces (takes ~ 4 seconds)
-        for (var t=finalLocToCheck-25;t<finalLocToCheck+25;t++) {  
-            if (doublePlaceWall==null && compWallsLeft>1 && typeof wallSimulations[t] != 'undefined' && playerWallsLeft-compWallsLeft<4 && 
-            arrShortestMoves_b[1]-arrShortestMoves_b[0]>=2) {     
-                var whatWallPlace = $('#board td[data-pos='+wallSimulations[t]+']').attr('class');    
-                if (whatWallPlace=="wallPlacementHoriz") {  
-                    var test_wall_1 = wallSimulations[t];
-                    var test_wall_2 = $('#board td[data-pos='+(test_wall_1)+']').next().next().attr('data-pos');
-                    var checkLegal = placeHorizWall_COMPUTE(test_wall_1,noWalls_d,walls_d,10,10,playerLoc,oppLoc,'c');     
-                } else if (whatWallPlace=="wallPlacementVert") {  
-                    var test_wall_1 = wallSimulations[t];
-                    var nvf = parseInt(test_wall_1.substr(0,test_wall_1.indexOf("-"))) + boardWidth;
-                    var nvs = parseInt(test_wall_1.substr(test_wall_1.indexOf("-")+1)) + boardWidth;
-                    var test_wall_2 = nvf+"-"+nvs;        
-                    var checkLegal = placeVertWall_COMPUTE(test_wall_1,noWalls_d,walls_d,10,10,playerLoc,oppLoc,'c');   
-                }
-                if (checkLegal!='illegal') { 
-                    for (var a=finalLocToCheck-25;a<finalLocToCheck+25;a++) {  
-                        if (checkLegal[0].indexOf(wallSimulations[a])!=-1) {
-                            var whatWallPlace_2 = $('#board td[data-pos='+wallSimulations[a]+']').attr('class');    
-                            if (whatWallPlace_2=="wallPlacementHoriz") {
-                                var test_wall_1_1 = wallSimulations[a];
-                                var test_wall_2_2 = $('#board td[data-pos='+(test_wall_1_1)+']').next().next().attr('data-pos');   
-                            }
-                            else if (whatWallPlace_2=="wallPlacementVert") { 
-                                var test_wall_1_1 = wallSimulations[a];
-                                var nvf = parseInt(test_wall_1_1.substr(0,test_wall_1_1.indexOf("-"))) + boardWidth;
-                                var nvs = parseInt(test_wall_1_1.substr(test_wall_1_1.indexOf("-")+1)) + boardWidth;
-                                var test_wall_2_2 = nvf+"-"+nvs;     
-                            }
-                            var checkLegal_2 = pathToEndExists(test_wall_1+","+test_wall_2+","+test_wall_1_1+","+test_wall_2_2,null,null);
-                            if (checkLegal_2) {          
-                                // if placing both walls are legal and both walls together slow player down
-                                var checkSP2walls = shortestPath($("#walls").val()+","+test_wall_1+","+test_wall_2+","+test_wall_1_1+","+test_wall_2_2,null,null);
-                                if (checkSP2walls[0]>high_change_player/*+1*/ && checkSP2walls[1]<=low_change_computer+1) { 
-                                    doublePlaceWall = a; 
-                                    doubleWallPathLen = checkSP2walls[0];
-                                    break; 
-                                }            
-                            } 
-                        }
+        if (finalLocToCheck!=null) {
+            for (var t=finalLocToCheck-25;t<finalLocToCheck+25;t++) {  
+                if (doublePlaceWall==null && compWallsLeft>1 && typeof wallSimulations[t] != 'undefined' && playerWallsLeft-compWallsLeft<4 && 
+                arrShortestMoves_b[1]-arrShortestMoves_b[0]>=2) {     
+                    var whatWallPlace = $('#board td[data-pos='+wallSimulations[t]+']').attr('class');    
+                    if (whatWallPlace=="wallPlacementHoriz") {  
+                        var test_wall_1 = wallSimulations[t];
+                        var test_wall_2 = $('#board td[data-pos='+(test_wall_1)+']').next().next().attr('data-pos');
+                        var checkLegal = placeHorizWall_COMPUTE(test_wall_1,noWalls_d,walls_d,10,10,playerLoc,oppLoc,'c');     
+                    } else if (whatWallPlace=="wallPlacementVert") {  
+                        var test_wall_1 = wallSimulations[t];
+                        var nvf = parseInt(test_wall_1.substr(0,test_wall_1.indexOf("-"))) + boardWidth;
+                        var nvs = parseInt(test_wall_1.substr(test_wall_1.indexOf("-")+1)) + boardWidth;
+                        var test_wall_2 = nvf+"-"+nvs;        
+                        var checkLegal = placeVertWall_COMPUTE(test_wall_1,noWalls_d,walls_d,10,10,playerLoc,oppLoc,'c');   
                     }
-                }  
-            }     
+                    if (checkLegal!='illegal') { 
+                        for (var a=finalLocToCheck-25;a<finalLocToCheck+25;a++) {  
+                            if (checkLegal[0].indexOf(wallSimulations[a])!=-1) {
+                                var whatWallPlace_2 = $('#board td[data-pos='+wallSimulations[a]+']').attr('class');    
+                                if (whatWallPlace_2=="wallPlacementHoriz") {
+                                    var test_wall_1_1 = wallSimulations[a];
+                                    var test_wall_2_2 = $('#board td[data-pos='+(test_wall_1_1)+']').next().next().attr('data-pos');   
+                                }
+                                else if (whatWallPlace_2=="wallPlacementVert") { 
+                                    var test_wall_1_1 = wallSimulations[a];
+                                    var nvf = parseInt(test_wall_1_1.substr(0,test_wall_1_1.indexOf("-"))) + boardWidth;
+                                    var nvs = parseInt(test_wall_1_1.substr(test_wall_1_1.indexOf("-")+1)) + boardWidth;
+                                    var test_wall_2_2 = nvf+"-"+nvs;     
+                                }
+                                var checkLegal_2 = pathToEndExists(test_wall_1+","+test_wall_2+","+test_wall_1_1+","+test_wall_2_2,null,null);
+                                if (checkLegal_2) {          
+                                    // if placing both walls are legal and both walls together slow player down
+                                    var checkSP2walls = shortestPath($("#walls").val()+","+test_wall_1+","+test_wall_2+","+test_wall_1_1+","+test_wall_2_2,null,null);
+                                    if (checkSP2walls[0]>high_change_player/*+1*/ && checkSP2walls[1]<=low_change_computer+1) { 
+                                        doublePlaceWall = a; 
+                                        doubleWallPathLen = checkSP2walls[0];
+                                        break; 
+                                    }            
+                                } 
+                            }
+                        }
+                    }  
+                }     
+            }
         }
         // find best move with shortest path
         var fm_pos = 0;
