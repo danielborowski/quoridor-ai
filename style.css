@@ -39,7 +39,7 @@ textarea { visibility: hidden; }
 
 /* RULES */
 #play { float: left; overflow: auto; padding-right: 15px; margin-left: 10px; }
-#rules { float: left; overflow: auto; width: 510px; height: 400px; 
+#rules { float: left; overflow: auto; width: 520px; height: 400px; 
 font-size: 15px; margin-top: 28px; margin-left: 20px; font-family: "Helvetica"; }    
 #rules p:first-child { font-size: 26px; text-align: center; margin-bottom: 12px; }
 #rules a { color: #297598; }

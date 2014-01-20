@@ -315,7 +315,7 @@ function computerMove() {
                         }
                     }
                 }  
-            }
+            }                         
         }
         var playerLoc = parseInt($('.piecePlayer').parent().attr('data-pos'));
         var compWallsLeft = $('#showCompPieces').children().next().text();
@@ -325,8 +325,13 @@ function computerMove() {
             var nextLoc = wallSimulations.indexOf(playerLoc+"-"+playerLoc+1);
             if (nextLoc==-1) {
                 nextLoc = wallSimulations.indexOf(playerLoc-9+"-"+playerLoc); 
-                if (nextLoc==-1) { finalLocToCheck = null; console.log("CANT ATTEMPT DOUBLE WALL"); } 
-                else { finalLocToCheck = nextLoc; }           
+                if (nextLoc==-1) {  
+                    nextLoc = wallSimulations.indexOf(playerLoc+"-"+playerLoc+9);
+                    if (nextLoc==-1) {
+                        finalLocToCheck = null; 
+                        console.log("CANT ATTEMPT DOUBLE WALL");        
+                    } 
+                } else { finalLocToCheck = nextLoc; }     
             } else { finalLocToCheck = nextLoc; }
         } else { finalLocToCheck = fromLoc; } 
         var walls_d = $("#walls").val();       
