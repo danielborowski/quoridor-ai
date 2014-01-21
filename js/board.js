@@ -75,13 +75,30 @@ function possibleMoves(loc,compTesting,opponentLoc,possibleWalls) {
             else if (j==3 && oppLoc-9!=loc && moves.indexOf(oppLoc-9)==-1) { moves.push(oppLoc-9); }      
         }
     }
+    for (var x=0;x<moves.length;x++) {
+        if ((moves[x]<0 || moves[x]>lastSpace) && removeSpaces.indexOf(moves[x]) == -1) { removeSpaces.push(moves[x]); }   
+        for (var c1=0;c1<removeOverlaps_col_last.length;c1++) {
+            if (loc==removeOverlaps_col_last[c1]) {
+                if (removeOverlaps_col_first.indexOf(moves[x]) != -1) {
+                     if (removeSpaces.indexOf(moves[x]) == -1) { removeSpaces.push(moves[x]); }
+                }    
+            }    
+        }
+        for (var c2=0;c2<removeOverlaps_col_first.length;c2++) {
+            if (loc==removeOverlaps_col_first[c2]) {
+                if (removeOverlaps_col_last.indexOf(moves[x]) != -1) {
+                     if (removeSpaces.indexOf(moves[x]) == -1) { removeSpaces.push(moves[x]); }
+                }    
+            }    
+        }
+    }    
     for (var a=0;a<moves.length;a++) {
         if (moves.indexOf(oppLoc) != -1) {
             if (oppLoc<moves[a]) { var check = oppLoc+"-"+moves[a]; }    
             else { var check = moves[a]+"-"+oppLoc; }      
             if (walls.indexOf(check) != -1 && removeSpaces.indexOf(moves[a]) == -1) { removeSpaces.push(moves[a]); }   
         }         
-    } 
+    }         
     // check if the placement of a possible (not placed yet) wall is legal by checking path to end
     if (possibleWalls==null) { var possibleWalls = $("#possibleWalls").val(); } 
     else { var possibleWalls = possibleWalls; }
